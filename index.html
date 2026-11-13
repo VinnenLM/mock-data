@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock-data · gerador de valores</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --border: #2a2f3a;
+    --text: #e6e8ee; --muted: #8a92a3; --accent: #5b8cff; --accent-h: #7aa2ff;
+    --ok: #3ecf8e; --err: #ff6b6b; --warn: #f5b84b;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f6f8; --panel: #ffffff; --panel2: #f0f2f6; --border: #dde1e8;
+      --text: #1b1f27; --muted: #667085; --accent: #3b6cf0; --accent-h: #2c57cc; --warn: #b7791f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); display: flex; }
+  aside { width: 240px; flex-shrink: 0; background: var(--panel); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 20px 12px; gap: 2px; overflow-y: auto; }
+  .brand { padding: 4px 12px 16px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .brand .logo { font-weight: 800; font-size: 28px; letter-spacing: -.5px; line-height: 1.1; }
+  .brand .logo span { color: var(--accent); }
+  .brand .tag { font-size: 13px; color: var(--muted); margin-top: 5px; }
+  .group { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 14px 12px 6px; }
+  nav button { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
+    padding: 9px 12px; border-radius: 8px; color: var(--muted); font-size: 14px; }
+  nav button:hover { background: var(--panel2); color: var(--text); }
+  nav button.active { background: var(--accent); color: #fff; }
+  nav button:focus-visible { outline: 2px solid var(--accent-h); }
+  .foot { margin-top: auto; font-size: 12px; color: var(--muted); padding: 12px; line-height: 1.4; }
+  main { flex: 1; overflow: auto; padding: 32px; min-width: 0; }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 18px; font-size: 14px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: flex-end;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .opt { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); }
+  .opt.inline { flex-direction: row; align-items: center; gap: 6px; font-size: 13px; padding-bottom: 8px; }
+  .opt select, .opt input[type=number] { background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px; font-size: 14px; min-width: 110px; }
+  .opt input[type=number] { width: 90px; min-width: 0; }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px 18px; flex-basis: 100%; }
+  .btn { cursor: pointer; border: 1px solid var(--border); background: var(--panel2); color: var(--text);
+    padding: 9px 16px; border-radius: 8px; font-size: 14px; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-h); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; align-items: center; }
+  .actions .count { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .tablewrap { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: auto; max-height: 60vh; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { text-align: left; position: sticky; top: 0; background: var(--panel2); color: var(--muted);
+    font-weight: 600; font-size: 12px; padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: nowrap; cursor: pointer; }
+  td:hover { background: var(--panel2); color: var(--accent-h); }
+  tr:last-child td { border-bottom: 0; }
+  td.copied { color: var(--ok); }
+  td.okc { color: var(--ok); } td.errc { color: var(--err); }
+  textarea.vin { width: 100%; min-height: 130px; margin-top: 14px; background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; resize: vertical; }
+  textarea.vin:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .note { margin-top: 14px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .note b { color: var(--warn); font-weight: 600; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--ok); color: #fff; padding: 8px 14px;
+    border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  @media (max-width: 760px) {
+    body { flex-direction: column; }
+    aside { width: 100%; flex-direction: row; flex-wrap: wrap; padding: 8px; border-right: 0; border-bottom: 1px solid var(--border); max-height: 40vh; }
+    .group, .foot { display: none; }
+    .brand { width: 100%; border: 0; padding: 4px 8px; margin: 0; display: flex; align-items: baseline; gap: 10px; }
+    .brand .logo { font-size: 22px; } .brand .tag { margin: 0; }
+    nav { display: flex; flex-wrap: wrap; gap: 4px; }
+    nav button { width: auto; }
+    main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<aside>
+  <div class="brand"><div class="logo">Mock<span>-data</span></div><div class="tag">gerador de valores</div></div>
+  <nav id="nav"></nav>
+  <div class="foot">Dados fictícios gerados no seu navegador. Nada é enviado para servidor.</div>
+</aside>
+<main><div class="wrap" id="app"></div></main>
+<div class="toast" id="toast">Copiado!</div>
+
+<script>
+(() => {
+  /* ================= utilidades ================= */
+  const ri = n => Math.floor(Math.random() * n);
+  const pick = a => a[ri(a.length)];
+  const dg = n => Array.from({ length: n }, () => ri(10));
+  const pad = (n, l) => String(n).padStart(l, "0");
+  const mask = (s, p) => { let i = 0; return p.replace(/0/g, () => s[i++]); };
+  const wsum = (d, w) => d.reduce((a, v, i) => a + v * w[i], 0);
+  const noAccent = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const allEqual = d => d.every(x => x === d[0]);
+
+  const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+  const randUF = uf => uf || pick(UFS);
+
+  /* ================= CPF ================= */
+  const REG = { RS:0, DF:1, GO:1, MS:1, MT:1, TO:1, AC:2, AM:2, AP:2, PA:2, RO:2, RR:2, CE:3, MA:3, PI:3,
+    AL:4, PB:4, PE:4, RN:4, BA:5, SE:5, MG:6, ES:7, RJ:7, SP:8, PR:9, SC:9 };
+  const cpfDV = d => { const w = d.length + 1; let s = 0; d.forEach((v, i) => s += v * (w - i)); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
+  function genCPF(uf, fmt) {
+    let d;
+    do { d = dg(8); d.push(uf ? REG[uf] : ri(10)); } while (allEqual(d));
+    d.push(cpfDV(d)); d.push(cpfDV(d));
+    const s = d.join("");
+    return fmt ? mask(s, "000.000.000-00") : s;
+  }
+
+  /* ================= CNPJ (numérico e alfanumérico) ================= */
+  const CH = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const W1 = [5,4,3,2,9,8,7,6,5,4,3,2], W2 = [6,5,4,3,2,9,8,7,6,5,4,3,2];
+  const cnpjDV = (base, w) => { let s = 0; for (let i = 0; i < w.length; i++) s += (base.charCodeAt(i) - 48) * w[i]; const r = s % 11; return r < 2 ? 0 : 11 - r; };
+  function genCNPJ(alnum, matriz, fmt) {
+    const rc = () => alnum ? CH[ri(36)] : String(ri(10));
+    const root = Array.from({ length: 8 }, rc).join("");
+    let ord = "0001";
+    if (!matriz) { do { ord = Array.from({ length: 4 }, rc).join(""); } while (ord === "0000" || ord === "0001"); }
+    const base = root + ord, d1 = cnpjDV(base, W1), d2 = cnpjDV(base + d1, W2);
+    const s = base + d1 + d2;
+    return fmt ? mask(s, "00.000.000/0000-00") : s;
+  }
+
+  /* ================= RG (padrão SP, DV módulo 11) ================= */
+  function genRG(fmt) {
+    const d = dg(8), r = wsum(d, [2,3,4,5,6,7,8,9]) % 11, v = 11 - r;
+    const dv = v === 10 ? "X" : v === 11 ? "0" : String(v);
+    const s = d.join("") + dv;
+    return fmt ? mask(s, "00.000.000-0") : s;
+  }
+
+  /* ================= Inscrição Estadual ================= */
+  const W9 = [9,8,7,6,5,4,3,2];
+  const r11 = (sm, lim = 2) => { const r = sm % 11; return r < lim ? 0 : 11 - r; };
+  const ge10 = v => v >= 10 ? 0 : v;
+  const IE = {
+    AL: { n: 8, pre: ["24"], mask: "000000000", calc: d => { const r = (wsum(d, W9) * 10) % 11; return [...d, r === 10 ? 0 : r]; } },
+    AM: { n: 8, mask: "00.000.000-0", calc: d => { const sm = wsum(d, W9); return [...d, sm < 11 ? 11 - sm : r11(sm)]; } },
+    BA: { n: 6, mask: "000000-00", calc: d => {
+      const m = [6, 7, 9].includes(d[0]) ? 11 : 10;
+      const f = sm => m === 10 ? (sm % 10 === 0 ? 0 : 10 - sm % 10) : r11(sm);
+      const b2 = f(wsum(d, [7,6,5,4,3,2])), b1 = f(wsum([...d, b2], [8,7,6,5,4,3,2]));
+      return [...d, b1, b2]; } },
+    CE: { n: 8, pre: ["06"], mask: "00000000-0", calc: d => [...d, ge10(11 - wsum(d, W9) % 11)] },
+    DF: { n: 11, pre: ["07"], mask: "00.000.000/000-00", calc: d => {
+      const a1 = ge10(11 - wsum(d, [4,3,2,9,8,7,6,5,4,3,2]) % 11), e = [...d, a1];
+      return [...e, ge10(11 - wsum(e, [5,4,3,2,9,8,7,6,5,4,3,2]) % 11)]; } },
+    ES: { n: 8, mask: "000.000.00-0", calc: d => [...d, r11(wsum(d, W9))] },
+    GO: { n: 8, pre: ["10", "11", "15"], mask: "00.000.000-0", calc: d => {
+      const r = wsum(d, W9) % 11, num = +d.join("");
+      return [...d, r === 0 ? 0 : r === 1 ? (num >= 10103105 && num <= 10119997 ? 1 : 0) : 11 - r]; } },
+    MA: { n: 8, pre: ["12"], mask: "000000000", calc: d => [...d, r11(wsum(d, W9))] },
+    MG: { n: 11, mask: "000.000.000/0000", calc: d => {
+      const t = [...d.slice(0, 3), 0, ...d.slice(3)]; let sm = 0;
+      t.forEach((v, i) => { const q = v * (i % 2 === 0 ? 1 : 2); sm += q > 9 ? Math.floor(q / 10) + q % 10 : q; });
+      const a1 = Math.ceil(sm / 10) * 10 - sm, e = [...d, a1];
+      return [...e, r11(wsum(e, [3,2,11,10,9,8,7,6,5,4,3,2]))]; } },
+    MS: { n: 8, pre: ["28"], mask: "000000000", calc: d => { const r = wsum(d, W9) % 11; return [...d, r === 0 ? 0 : ge10(11 - r)]; } },
+    MT: { n: 10, mask: "0000000000-0", calc: d => [...d, r11(wsum(d, [3,2,9,8,7,6,5,4,3,2]))] },
+    PA: { n: 8, pre: ["15"], mask: "00-000000-0", calc: d => [...d, r11(wsum(d, W9))] },
+    PB: { n: 8, mask: "00000000-0", calc: d => [...d, ge10(11 - wsum(d, W9) % 11)] },
+    PE: { n: 7, mask: "0000000-00", calc: d => { const a1 = r11(wsum(d, [8,7,6,5,4,3,2])), e = [...d, a1]; return [...e, r11(wsum(e, W9))]; } },
+    PI: { n: 8, mask: "000000000", calc: d => [...d, ge10(11 - wsum(d, W9) % 11)] },
+    PR: { n: 8, mask: "000.00000-00", calc: d => {
+      const a1 = ge10(11 - wsum(d, [3,2,7,6,5,4,3,2]) % 11), e = [...d, a1];
+      return [...e, ge10(11 - wsum(e, [4,3,2,7,6,5,4,3,2]) % 11)]; } },
+    RJ: { n: 7, mask: "00.000.00-0", calc: d => [...d, r11(wsum(d, [2,7,6,5,4,3,2]))] },
+    RN: { n: 8, pre: ["20"], mask: "00.000.000-0", calc: d => { const r = (wsum(d, W9) * 10) % 11; return [...d, r === 10 ? 0 : r]; } },
+    RR: { n: 8, pre: ["24"], mask: "00000000-0", calc: d => [...d, wsum(d, [1,2,3,4,5,6,7,8]) % 9] },
+    RS: { n: 9, mask: "000/0000000", calc: d => [...d, ge10(11 - wsum(d, [2,9,8,7,6,5,4,3,2]) % 11)] },
+    SC: { n: 8, mask: "000.000.000", calc: d => [...d, ge10(11 - wsum(d, W9) % 11)] },
+    SE: { n: 8, mask: "00000000-0", calc: d => [...d, ge10(11 - wsum(d, W9) % 11)] },
+    SP: { n: 10, mask: "000.000.000.000", base: x => [...x.slice(0, 8), ...x.slice(9, 11)], calc: d => {
+      const h = d.slice(0, 8), a1 = wsum(h, [1,3,4,5,6,7,8,10]) % 11 % 10, e = [...h, a1, d[8], d[9]];
+      return [...e, wsum(e, [3,2,10,9,8,7,6,5,4,3,2]) % 11 % 10]; } }
+  };
+  function genIE(uf, fmt) {
+    const sp = IE[uf]; let full;
+    do {
+      let base = sp.pre ? [...pick(sp.pre)].map(Number) : [];
+      base = base.concat(dg(sp.n - base.length));
+      full = sp.calc(base);
+    } while (!full.every(x => x >= 0 && x <= 9));
+    const str = full.join("");
+    return fmt ? mask(str, sp.mask) : str;
+  }
+  function ieValid(uf, raw) {
+    const sp = IE[uf], dgt = raw.replace(/\D/g, ""), total = sp.calc(Array(sp.n).fill(1)).length;
+    if (dgt.length !== total) return [false, `${uf} tem ${total} dígitos (informado: ${dgt.length})`];
+    if (sp.pre && !sp.pre.some(p => dgt.startsWith(p))) return [false, `${uf} deve começar com ${sp.pre.join(" ou ")}`];
+    const x = [...dgt].map(Number), base = sp.base ? sp.base(x) : x.slice(0, sp.n), full = sp.calc(base).join("");
+    return full === dgt ? [true, `IE ${uf}`] : [false, "dígito verificador não confere"];
+  }
+
+  /* ================= CNH, PIS, Título ================= */
+  function genCNH() {
+    const d = dg(9); let v = 0, dsc = 0;
+    d.forEach((x, i) => v += x * (9 - i));
+    let a = v % 11; if (a >= 10) { a = 0; dsc = 2; }
+    v = 0; d.forEach((x, i) => v += x * (i + 1));
+    const x = v % 11; let b = x - dsc; if (b < 0) b += 11; if (b >= 10) b = 0;
+    return [...d, a, b].join("");
+  }
+  function genPIS(fmt) {
+    const base = dg(10), s = wsum(base, [3,2,9,8,7,6,5,4,3,2]), v = 11 - s % 11, dv = v >= 10 ? 0 : v;
+    const str = base.join("") + dv;
+    return fmt ? mask(str, "000.00000.00-0") : str;
+  }
+  function genTitulo(uf, fmt) {
+    const code = { SP:1, MG:2, RJ:3, RS:4, BA:5, PR:6, CE:7, PE:8, SC:9, GO:10, MA:11, PB:12, PA:13, ES:14, PI:15, RN:16, AL:17, MT:18, MS:19, DF:20, SE:21, AM:22, RO:23, AC:24, AP:25, RR:26, TO:27 }[randUF(uf)];
+    const seq = dg(8), u = [Math.floor(code / 10), code % 10];
+    const fix = (r, c) => (r === 0 && (c === 1 || c === 2)) ? 1 : r === 10 ? 0 : r;
+    const d1 = fix(wsum(seq, [2,3,4,5,6,7,8,9]) % 11, code);
+    const d2 = fix((u[0] * 7 + u[1] * 8 + d1 * 9) % 11, code);
+    const s = seq.join("") + pad(code, 2) + d1 + d2;
+    return fmt ? mask(s, "0000 0000 0000") : s;
+  }
+
+  /* ================= Nomes ================= */
+  const NM = ["João","Pedro","Lucas","Gabriel","Rafael","Carlos","Marcos","Felipe","Bruno","Thiago","Gustavo","Rodrigo","André","Diego","Leonardo","Matheus","Vinícius","Eduardo","Fernando","Ricardo","Daniel","Henrique","Murilo","Caio","Otávio"];
+  const NF = ["Maria","Ana","Beatriz","Camila","Juliana","Fernanda","Larissa","Patrícia","Aline","Luiza","Mariana","Isabela","Carolina","Letícia","Amanda","Bruna","Renata","Vanessa","Priscila","Débora","Gabriela","Sabrina","Helena","Clara","Bianca"];
+  const SN = ["Silva","Santos","Oliveira","Souza","Rodrigues","Ferreira","Alves","Pereira","Lima","Gomes","Costa","Ribeiro","Martins","Carvalho","Almeida","Lopes","Soares","Fernandes","Vieira","Barbosa","Rocha","Dias","Nascimento","Andrade","Moreira","Nunes","Marques","Machado","Mendes","Freitas","Cardoso","Ramos","Teixeira","Moraes","Cavalcanti"];
+  function genNome(sex, sobrenomes) {
+    const s = sex || pick(["M", "F"]);
+    const parts = [pick(s === "M" ? NM : NF)];
+    while (parts.length < 1 + sobrenomes) { const x = pick(SN); if (!parts.includes(x)) parts.push(x); }
+    return { nome: parts.join(" "), sex: s };
+  }
+
+  /* ================= Contato / endereço ================= */
+  const DDD = [11,12,13,14,15,16,17,18,19,21,22,24,27,28,31,32,33,34,35,37,38,41,42,43,44,45,46,47,48,49,51,53,54,55,61,62,63,64,65,66,67,68,69,71,73,74,75,77,79,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99];
+  function genTel(tipo, fmt, ddi) {
+    const cel = tipo === "cel" || (tipo === "" && ri(2) === 0);
+    const num = cel ? "9" + (6 + ri(4)) + pad(ri(1e7), 7) : (2 + ri(4)) + pad(ri(1e7), 7);
+    const ddd = String(pick(DDD));
+    let s;
+    if (fmt) s = `(${ddd}) ${cel ? num.slice(0, 5) + "-" + num.slice(5) : num.slice(0, 4) + "-" + num.slice(4)}`;
+    else s = ddd + num;
+    return ddi ? (fmt ? "+55 " : "55") + s : s;
+  }
+  const DOM = ["example.com", "example.org", "example.net"];
+  const genEmail = nome => {
+    const p = noAccent(nome).toLowerCase().split(" ");
+    return `${p[0]}.${p[p.length - 1]}${ri(100) < 60 ? ri(1000) : ""}@${pick(DOM)}`;
+  };
+  function genNasc(min, max, fmt) {
+    const now = new Date(), age = min + ri(Math.max(1, max - min + 1));
+    const y = now.getFullYear() - age, m = ri(12), d = 1 + ri(new Date(y, m + 1, 0).getDate());
+    return fmt ? `${pad(d, 2)}/${pad(m + 1, 2)}/${y}` : `${y}-${pad(m + 1, 2)}-${pad(d, 2)}`;
+  }
+  const CEPR = { SP:[1000,19999], RJ:[20000,28999], ES:[29000,29999], MG:[30000,39999], BA:[40000,48999], SE:[49000,49999],
+    PE:[50000,56999], AL:[57000,57999], PB:[58000,58999], RN:[59000,59999], CE:[60000,63999], PI:[64000,64999],
+    MA:[65000,65999], PA:[66000,68899], AP:[68900,68999], AM:[69000,69299], RR:[69300,69399], AC:[69900,69999],
+    DF:[70000,73699], GO:[73700,76799], RO:[76800,76999], TO:[77000,77995], MT:[78000,78899], MS:[79000,79999],
+    PR:[80000,87999], SC:[88000,89999], RS:[90000,99999] };
+  function genCEP(uf, fmt) {
+    const [a, b] = CEPR[randUF(uf)], s = pad(a + ri(b - a + 1), 5) + pad(ri(1000), 3);
+    return fmt ? s.slice(0, 5) + "-" + s.slice(5) : s;
+  }
+  const CIDADES = { AC:["Rio Branco","Cruzeiro do Sul","Sena Madureira"], AL:["Maceió","Arapiraca","Rio Largo"], AP:["Macapá","Santana","Laranjal do Jari"],
+    AM:["Manaus","Parintins","Itacoatiara"], BA:["Salvador","Feira de Santana","Vitória da Conquista"], CE:["Fortaleza","Caucaia","Juazeiro do Norte"],
+    DF:["Brasília","Taguatinga","Ceilândia"], ES:["Vitória","Vila Velha","Serra"], GO:["Goiânia","Anápolis","Aparecida de Goiânia"],
+    MA:["São Luís","Imperatriz","Caxias"], MT:["Cuiabá","Várzea Grande","Rondonópolis"], MS:["Campo Grande","Dourados","Três Lagoas"],
+    MG:["Belo Horizonte","Uberlândia","Juiz de Fora"], PA:["Belém","Ananindeua","Santarém"], PB:["João Pessoa","Campina Grande","Patos"],
+    PR:["Curitiba","Londrina","Maringá"], PE:["Recife","Olinda","Caruaru"], PI:["Teresina","Parnaíba","Picos"], RJ:["Rio de Janeiro","Niterói","Petrópolis"],
+    RN:["Natal","Mossoró","Parnamirim"], RS:["Porto Alegre","Caxias do Sul","Pelotas"], RO:["Porto Velho","Ji-Paraná","Ariquemes"],
+    RR:["Boa Vista","Rorainópolis","Caracaraí"], SC:["Florianópolis","Joinville","Blumenau"], SP:["São Paulo","Campinas","Santos"],
+    SE:["Aracaju","Nossa Senhora do Socorro","Lagarto"], TO:["Palmas","Araguaína","Gurupi"] };
+  const TIPOS_LOG = ["Rua", "Avenida", "Travessa", "Alameda", "Praça"];
+  const NOMES_LOG = ["das Flores","Sete de Setembro","Getúlio Vargas","Tiradentes","da Paz","XV de Novembro","Santos Dumont","Dom Pedro II","Presidente Kennedy","das Acácias","São José","Marechal Deodoro","Rui Barbosa","Castro Alves","Santa Catarina","dos Ipês","da Independência","da Liberdade","do Brasil","das Palmeiras"];
+  const BAIRROS = ["Centro","Jardim América","Vila Nova","Bela Vista","São José","Boa Vista","Santa Maria","Jardim Primavera","Parque Industrial","Vila Rosa","Alto da Boa Vista","Cidade Nova","Liberdade","Santo Antônio","Jardim das Flores"];
+  const COMPL = ["Apto 101","Bloco B","Casa 2","Sala 305","Fundos","Apto 42","Loja 3","Bloco A, Apto 12"];
+  function genEndereco(uf, fmt, compl) {
+    const u = randUF(uf), r = { Logradouro: `${pick(TIPOS_LOG)} ${pick(NOMES_LOG)}`, Número: String(1 + ri(3000)) };
+    if (compl) r.Complemento = pick(COMPL);
+    r.Bairro = pick(BAIRROS); r.Cidade = pick(CIDADES[u]); r.UF = u; r.CEP = genCEP(u, fmt);
+    return r;
+  }
+  function genPlaca(tipo, fmt) {
+    const L = () => String.fromCharCode(65 + ri(26));
+    const merc = tipo === "merc" || (tipo === "" && ri(2) === 0);
+    return merc ? `${L()}${L()}${L()}${ri(10)}${L()}${pad(ri(100), 2)}`
+      : `${L()}${L()}${L()}${fmt ? "-" : ""}${pad(ri(10000), 4)}`;
+  }
+
+  /* ================= Financeiro ================= */
+  const BANCOS = [["001","Banco do Brasil"],["033","Santander"],["104","Caixa Econômica"],["237","Bradesco"],["341","Itaú"],
+    ["260","Nubank"],["077","Inter"],["336","C6 Bank"],["422","Safra"],["756","Sicoob"],["748","Sicredi"],["212","Original"]];
+  function genConta(banco, tipo, fmt) {
+    const b = banco ? BANCOS.find(x => x[0] === banco) : pick(BANCOS);
+    const ag = String(1 + ri(9)) + pad(ri(1000), 3);
+    const n = dg(5 + ri(4)), s = n.reduce((a, v, i) => a + v * (2 + (n.length - 1 - i) % 8), 0), r = 11 - s % 11, dv = r >= 10 ? 0 : r;
+    const conta = fmt ? n.join("") + "-" + dv : n.join("") + dv;
+    const t = tipo || pick(["Corrente", "Poupança"]);
+    return { banco: `${b[0]} - ${b[1]}`, agencia: ag, conta, tipo: t };
+  }
+  const BANDEIRAS = {
+    visa: { n: "Visa", len: 16, pre: () => "4", cvv: 3 },
+    master: { n: "Mastercard", len: 16, pre: () => String(51 + ri(5)), cvv: 3 },
+    amex: { n: "American Express", len: 15, pre: () => pick(["34", "37"]), cvv: 4 },
+    elo: { n: "Elo", len: 16, pre: () => pick(["636368", "438935", "504175", "451416", "636297", "506699"]), cvv: 3 },
+    hiper: { n: "Hipercard", len: 16, pre: () => "606282", cvv: 3 }
+  };
+  const luhnDigit = body => { let s = 0; for (let i = body.length - 1, alt = true; i >= 0; i--, alt = !alt) { let n = +body[i]; if (alt) { n *= 2; if (n > 9) n -= 9; } s += n; } return (10 - s % 10) % 10; };
+  function genCartao(bandKey, fmt) {
+    const bd = BANDEIRAS[bandKey || pick(Object.keys(BANDEIRAS))];
+    let body = bd.pre(); while (body.length < bd.len - 1) body += ri(10);
+    const num = body + luhnDigit(body);
+    const numero = !fmt ? num : bd.len === 15 ? `${num.slice(0, 4)} ${num.slice(4, 10)} ${num.slice(10)}` : num.replace(/(.{4})/g, "$1 ").trim();
+    const y = new Date().getFullYear();
+    return { bandeira: bd.n, numero, validade: `${pad(1 + ri(12), 2)}/${String(y + 1 + ri(6)).slice(2)}`, cvv: pad(ri(10 ** bd.cvv), bd.cvv) };
+  }
+
+  /* ================= Definição dos geradores ================= */
+  const oUF = { id: "uf", type: "select", label: "UF", options: [["", "Aleatória"], ...UFS.map(u => [u, u])] };
+  const oFmt = { id: "fmt", type: "check", label: "Com pontuação", def: true };
+  const bancoOpts = [["", "Aleatório"], ...BANCOS.map(b => [b[0], `${b[0]} - ${b[1]}`])];
+  const bandOpts = [["", "Aleatória"], ...Object.entries(BANDEIRAS).map(([k, v]) => [k, v.n])];
+
+  const GENS = [
+    { g: "Documentos", id: "cpf", title: "CPF", desc: "CPF com dígitos verificadores válidos. A UF define o 9º dígito (região fiscal).",
+      opts: [oUF, oFmt], run: o => ({ CPF: genCPF(o.uf, o.fmt) }) },
+    { g: "Documentos", id: "cnpj", title: "CNPJ", desc: "CNPJ numérico ou alfanumérico (formato em vigor desde julho de 2026).",
+      opts: [{ id: "alnum", type: "check", label: "Alfanumérico", def: false }, { id: "matriz", type: "check", label: "Matriz (0001)", def: true }, oFmt],
+      run: o => ({ CNPJ: genCNPJ(o.alnum, o.matriz, o.fmt) }) },
+    { g: "Documentos", id: "rg", title: "RG", desc: "RG no padrão de 8 dígitos + DV (X ou número). O RG não tem regra nacional única.",
+      opts: [oFmt], run: o => ({ RG: genRG(o.fmt) }) },
+    { g: "Documentos", id: "ie", title: "Inscrição Estadual", desc: "IE com dígitos verificadores válidos para 23 UFs (ainda faltam AC, AP, RO e TO).",
+      opts: [{ id: "uf", type: "select", label: "UF", options: Object.keys(IE).sort().map(u => [u, u]) }, oFmt],
+      run: o => ({ UF: o.uf, "Inscrição Estadual": genIE(o.uf, o.fmt) }) },
+    { g: "Documentos", id: "cnh", title: "CNH", desc: "Número de registro da CNH (11 dígitos) com DVs válidos.",
+      opts: [], run: () => ({ CNH: genCNH() }) },
+    { g: "Documentos", id: "pis", title: "PIS / NIS", desc: "PIS/NIS/PASEP de 11 dígitos com DV válido.",
+      opts: [oFmt], run: o => ({ "PIS/NIS": genPIS(o.fmt) }) },
+    { g: "Documentos", id: "titulo", title: "Título de eleitor", desc: "Título com código de UF e dois DVs válidos.",
+      opts: [oUF, oFmt], run: o => ({ Título: genTitulo(o.uf, o.fmt) }) },
+
+    { g: "Pessoais", id: "nome", title: "Nome", desc: "Nomes brasileiros comuns, combinados aleatoriamente.",
+      opts: [{ id: "sex", type: "select", label: "Gênero", options: [["", "Qualquer"], ["M", "Masculino"], ["F", "Feminino"]] },
+        { id: "sn", type: "select", label: "Sobrenomes", options: [["1", "1"], ["2", "2"], ["3", "3"]] }],
+      run: o => ({ Nome: genNome(o.sex, +o.sn).nome }) },
+    { g: "Pessoais", id: "tel", title: "Telefone", desc: "DDDs reais do Brasil, números aleatórios.",
+      opts: [{ id: "tipo", type: "select", label: "Tipo", options: [["", "Qualquer"], ["cel", "Celular"], ["fixo", "Fixo"]] },
+        oFmt, { id: "ddi", type: "check", label: "Incluir +55", def: false }],
+      run: o => ({ Telefone: genTel(o.tipo, o.fmt, o.ddi) }) },
+    { g: "Pessoais", id: "email", title: "E-mail", desc: "Usa domínios reservados (example.com/.org/.net), que nunca existem de verdade.",
+      opts: [], run: () => ({ "E-mail": genEmail(genNome("", 1).nome) }) },
+    { g: "Pessoais", id: "nasc", title: "Data de nascimento", desc: "Data aleatória dentro da faixa de idade escolhida.",
+      opts: [{ id: "min", type: "number", label: "Idade mín.", def: 18 }, { id: "max", type: "number", label: "Idade máx.", def: 70 },
+        { id: "fmt", type: "check", label: "dd/mm/aaaa", def: true }],
+      run: o => ({ Nascimento: genNasc(+o.min, Math.max(+o.min, +o.max), o.fmt) }) },
+    { g: "Pessoais", id: "cep", title: "CEP", desc: "CEP dentro da faixa da UF. O endereço pode não existir de verdade.",
+      opts: [oUF, oFmt], run: o => ({ CEP: genCEP(o.uf, o.fmt) }) },
+    { g: "Pessoais", id: "endereco", title: "Endereço", desc: "Endereço fictício: cidade real da UF, CEP na faixa da UF. A combinação rua/CEP não existe de verdade.",
+      opts: [oUF, { id: "compl", type: "check", label: "Complemento", def: true }, oFmt],
+      run: o => genEndereco(o.uf, o.fmt, o.compl) },
+    { g: "Pessoais", id: "placa", title: "Placa de veículo", desc: "Padrão antigo (ABC-1234) ou Mercosul (ABC1D23).",
+      opts: [{ id: "tipo", type: "select", label: "Padrão", options: [["", "Qualquer"], ["antiga", "Antiga"], ["merc", "Mercosul"]] }, oFmt],
+      run: o => ({ Placa: genPlaca(o.tipo, o.fmt) }) },
+
+    { g: "Financeiro", id: "conta", title: "Conta bancária", desc: "Estrutura fictícia (banco, agência, conta). O DV não segue a regra de um banco específico.",
+      opts: [{ id: "banco", type: "select", label: "Banco", options: bancoOpts },
+        { id: "tipo", type: "select", label: "Tipo", options: [["", "Qualquer"], ["Corrente", "Corrente"], ["Poupança", "Poupança"]] }, oFmt],
+      run: o => { const c = genConta(o.banco, o.tipo, o.fmt); return { Banco: c.banco, Agência: c.agencia, Conta: c.conta, Tipo: c.tipo }; } },
+    { g: "Financeiro", id: "cartao", title: "Cartão de crédito", desc: "Número válido pelo algoritmo de Luhn, mas fictício. Não funciona em compras.",
+      opts: [{ id: "band", type: "select", label: "Bandeira", options: bandOpts }, oFmt,
+        { id: "c_nome", type: "check", label: "Nome", def: true }, { id: "c_num", type: "check", label: "Número", def: true },
+        { id: "c_val", type: "check", label: "Validade", def: true }, { id: "c_cvv", type: "check", label: "CVV", def: true },
+        { id: "c_band", type: "check", label: "Bandeira", def: true }, { id: "c_cpf", type: "check", label: "CPF do titular", def: false }],
+      run: o => {
+        const c = genCartao(o.band, o.fmt), r = {}, p = genNome("", 2).nome;
+        if (o.c_band) r.Bandeira = c.bandeira;
+        if (o.c_nome) r.Nome = noAccent(p).toUpperCase();
+        if (o.c_num) r.Número = c.numero;
+        if (o.c_val) r.Validade = c.validade;
+        if (o.c_cvv) r.CVV = c.cvv;
+        if (o.c_cpf) r.CPF = genCPF("", o.fmt);
+        return r;
+      } },
+
+    { g: "Combo", id: "pessoa", title: "Pessoa completa", desc: "Um perfil coerente: e-mail derivado do nome, CPF e CEP da mesma UF. Marque os campos que quiser.",
+      opts: [oUF, oFmt,
+        { id: "p_nome", type: "check", label: "Nome", def: true }, { id: "p_cpf", type: "check", label: "CPF", def: true },
+        { id: "p_rg", type: "check", label: "RG", def: true }, { id: "p_nasc", type: "check", label: "Nascimento", def: true },
+        { id: "p_email", type: "check", label: "E-mail", def: true }, { id: "p_tel", type: "check", label: "Telefone", def: true },
+        { id: "p_cep", type: "check", label: "CEP", def: true }, { id: "p_end", type: "check", label: "Endereço", def: false }, { id: "p_cnh", type: "check", label: "CNH", def: false },
+        { id: "p_pis", type: "check", label: "PIS", def: false }, { id: "p_tit", type: "check", label: "Título", def: false },
+        { id: "p_conta", type: "check", label: "Conta bancária", def: false }, { id: "p_cartao", type: "check", label: "Cartão", def: false }],
+      run: o => {
+        const uf = randUF(o.uf), n = genNome("", 1 + ri(2)).nome, r = {};
+        if (o.p_nome) r.Nome = n;
+        if (o.p_cpf) r.CPF = genCPF(uf, o.fmt);
+        if (o.p_rg) r.RG = genRG(o.fmt);
+        if (o.p_nasc) r.Nascimento = genNasc(18, 70, o.fmt);
+        if (o.p_email) r["E-mail"] = genEmail(n);
+        if (o.p_tel) r.Telefone = genTel("cel", o.fmt, false);
+        if (o.p_end) Object.assign(r, genEndereco(uf, o.fmt, true));
+        else if (o.p_cep) { r.UF = uf; r.CEP = genCEP(uf, o.fmt); }
+        if (o.p_cnh) r.CNH = genCNH();
+        if (o.p_pis) r["PIS/NIS"] = genPIS(o.fmt);
+        if (o.p_tit) r.Título = genTitulo(uf, o.fmt);
+        if (o.p_conta) { const c = genConta("", "", o.fmt); r.Banco = c.banco; r.Agência = c.agencia; r.Conta = c.conta; }
+        if (o.p_cartao) { const c = genCartao("", o.fmt); r.Cartão = c.numero; r.Validade = c.validade; r.CVV = c.cvv; }
+        return r;
+      } },
+
+    { g: "Ferramentas", id: "validar", title: "Validador", validator: true, desc: "Cole valores (um por linha) e confira se os dígitos verificadores batem.",
+      opts: [{ id: "tipo", type: "select", label: "Tipo", options: [["cpf", "CPF"], ["cnpj", "CNPJ"], ["cartao", "Cartão de crédito"], ["ie", "Inscrição Estadual"]] },
+        { id: "uf", type: "select", label: "UF (só para IE)", options: Object.keys(IE).sort().map(u => [u, u]) }] }
+  ];
+
+  /* ================= Validação ================= */
+  const cpfValid = raw => {
+    const c = raw.replace(/\D/g, "");
+    if (c.length !== 11) return [false, `${c.length} dígitos (esperado 11)`];
+    if (/^(\d)\1+$/.test(c)) return [false, "dígitos repetidos"];
+    const d = [...c].map(Number);
+    return cpfDV(d.slice(0, 9)) === d[9] && cpfDV(d.slice(0, 10)) === d[10] ? [true, "CPF"] : [false, "dígito verificador não confere"];
+  };
+  const cnpjValid = raw => {
+    const c = raw.toUpperCase().replace(/[.\/\-\s]/g, "");
+    if (c.length !== 14) return [false, `${c.length} caracteres (esperado 14)`];
+    if (!/^[0-9A-Z]{12}[0-9]{2}$/.test(c)) return [false, "caracteres inválidos"];
+    if (/^(\d)\1+$/.test(c)) return [false, "dígitos repetidos"];
+    return cnpjDV(c.slice(0, 12), W1) == c[12] && cnpjDV(c.slice(0, 13), W2) == c[13]
+      ? [true, /[A-Z]/.test(c) ? "CNPJ alfanumérico" : "CNPJ numérico"] : [false, "dígito verificador não confere"];
+  };
+  const bandeiraOf = n =>
+    /^(636368|438935|504175|451416|636297|506699|431274|457393|5067|4576|401178|401179)/.test(n) ? "Elo"
+    : /^(606282|3841)/.test(n) ? "Hipercard" : /^3[47]/.test(n) ? "American Express" : /^4/.test(n) ? "Visa"
+    : /^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d\d|27[01]\d|2720)/.test(n) ? "Mastercard" : "Bandeira não identificada";
+  const cartaoValid = raw => {
+    const n = raw.replace(/[\s-]/g, "");
+    if (!/^\d{12,19}$/.test(n)) return [false, "deve ter de 12 a 19 dígitos"];
+    if (luhnDigit(n.slice(0, -1)) !== +n[n.length - 1]) return [false, "falhou no algoritmo de Luhn"];
+    return [true, `${bandeiraOf(n)} · ${n.length} dígitos`];
+  };
+  function validate(st, text) {
+    return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(v => {
+      const [ok, msg] = st.tipo === "cpf" ? cpfValid(v) : st.tipo === "cnpj" ? cnpjValid(v) : st.tipo === "cartao" ? cartaoValid(v) : ieValid(st.uf, v);
+      return { Valor: v, Situação: ok ? "✔ Válido" : "✘ Inválido", Detalhe: msg };
+    });
+  }
+
+  /* ================= UI ================= */
+  const $ = s => document.querySelector(s);
+  const nav = $("#nav"), app = $("#app");
+  const state = {}; // opções por gerador
+  let current = null, rows = [];
+
+  let lastGroup = "";
+  GENS.forEach(g => {
+    if (g.g !== lastGroup) { const h = document.createElement("div"); h.className = "group"; h.textContent = g.g; nav.appendChild(h); lastGroup = g.g; }
+    const b = document.createElement("button"); b.textContent = g.title; b.dataset.id = g.id;
+    b.addEventListener("click", () => open(g.id)); nav.appendChild(b);
+    state[g.id] = { qty: 5 }; g.opts.forEach(o => state[g.id][o.id] = o.type === "check" ? o.def : o.type === "number" ? o.def : o.options[0][0]);
+  });
+
+  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 1100); }
+  async function copy(text, msg) {
+    try { await navigator.clipboard.writeText(text); }
+    catch { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+    toast(msg || "Copiado!");
+  }
+
+  function open(id) {
+    current = GENS.find(g => g.id === id);
+    nav.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.id === id));
+    history.replaceState(null, "", "#" + id);
+    const st = state[id];
+    app.innerHTML = `<h1>${current.title}</h1><p class="sub">${current.desc}</p><div class="opts" id="opts"></div>
+      ${current.validator ? '<textarea class="vin" id="vin" spellcheck="false" placeholder="Um valor por linha..."></textarea>' : ""}
+      <div class="actions"><button class="btn primary" id="gen">${current.validator ? "Validar" : "Gerar"}</button><button class="btn" id="cpall">Copiar tudo</button>
+      <button class="btn" id="csv">Baixar CSV</button><button class="btn" id="json">Baixar JSON</button><span class="count" id="count"></span></div>
+      <div class="tablewrap"><table id="tbl"></table></div>
+      <p class="note"><b>Atenção:</b> todos os dados são fictícios e servem apenas para testes e desenvolvimento. Dígitos verificadores válidos não significam que o documento exista ou pertença a alguém.</p>`;
+    const box = $("#opts");
+    const qty = document.createElement("label"); qty.className = "opt"; qty.innerHTML = `Quantidade<input type="number" min="1" max="1000" value="${st.qty}">`;
+    qty.querySelector("input").addEventListener("input", e => { st.qty = Math.min(1000, Math.max(1, +e.target.value || 1)); generate(); });
+    if (!current.validator) box.appendChild(qty);
+    const checks = document.createElement("div"); checks.className = "checks";
+    current.opts.forEach(o => {
+      const l = document.createElement("label");
+      if (o.type === "select") {
+        l.className = "opt"; l.textContent = o.label;
+        const s = document.createElement("select");
+        o.options.forEach(([v, t]) => { const op = new Option(t, v); if (st[o.id] === v) op.selected = true; s.add(op); });
+        s.addEventListener("change", () => { st[o.id] = s.value; generate(); }); l.appendChild(s); box.appendChild(l);
+      } else if (o.type === "number") {
+        l.className = "opt"; l.textContent = o.label;
+        const i = document.createElement("input"); i.type = "number"; i.min = 0; i.max = 120; i.value = st[o.id];
+        i.addEventListener("input", () => { st[o.id] = +i.value; generate(); }); l.appendChild(i); box.appendChild(l);
+      } else {
+        l.className = "opt inline"; const c = document.createElement("input"); c.type = "checkbox"; c.checked = st[o.id];
+        c.addEventListener("change", () => { st[o.id] = c.checked; generate(); });
+        l.append(c, o.label); (current.id === "pessoa" || current.id === "cartao") && o.id.startsWith(current.id === "pessoa" ? "p_" : "c_") ? checks.appendChild(l) : box.appendChild(l);
+      }
+    });
+    if (checks.children.length) box.appendChild(checks);
+    $("#gen").onclick = generate;
+    if (current.validator) { const v = $("#vin"); v.value = st.text || ""; v.addEventListener("input", () => { st.text = v.value; generate(); }); }
+    $("#cpall").onclick = () => rows.length && copy(toText(), "Tudo copiado!");
+    $("#csv").onclick = () => download("csv");
+    $("#json").onclick = () => download("json");
+    generate();
+  }
+
+  function generate() {
+    const st = state[current.id];
+    if (current.validator) rows = validate(st, $("#vin").value);
+    else { rows = []; for (let i = 0; i < st.qty; i++) rows.push(current.run(st)); }
+    const keys = Object.keys(rows[0] || {});
+    const tbl = $("#tbl");
+    tbl.innerHTML = "";
+    if (!keys.length) {
+      tbl.innerHTML = `<tr><td>${current.validator ? "Cole valores acima para validar." : "Selecione ao menos um campo."}</td></tr>`;
+      $("#count").textContent = ""; return;
+    }
+    const thead = tbl.createTHead().insertRow(); keys.forEach(k => { const th = document.createElement("th"); th.textContent = k; thead.appendChild(th); });
+    const tb = tbl.createTBody();
+    rows.forEach(r => { const tr = tb.insertRow(); keys.forEach(k => { const td = tr.insertCell(); td.textContent = r[k]; td.title = "Clique para copiar";
+      if (k === "Situação") td.className = r[k].startsWith("✔") ? "okc" : "errc";
+      td.addEventListener("click", () => { copy(td.textContent); td.classList.add("copied"); setTimeout(() => td.classList.remove("copied"), 700); }); }); });
+    $("#count").textContent = `${rows.length} registro${rows.length > 1 ? "s" : ""} · clique numa célula para copiar`;
+  }
+
+  function toText() {
+    const keys = Object.keys(rows[0]);
+    return keys.length === 1 ? rows.map(r => r[keys[0]]).join("\n")
+      : [keys.join("\t"), ...rows.map(r => keys.map(k => r[k]).join("\t"))].join("\n");
+  }
+  function download(kind) {
+    if (!rows.length || !Object.keys(rows[0]).length) return;
+    const keys = Object.keys(rows[0]);
+    let body, type;
+    if (kind === "json") { body = JSON.stringify(rows, null, 2); type = "application/json"; }
+    else { const q = v => /[",;\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v;
+      body = "﻿" + [keys.map(q).join(","), ...rows.map(r => keys.map(k => q(r[k])).join(","))].join("\n"); type = "text/csv;charset=utf-8"; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([body], { type }));
+    a.download = `${current.id}.${kind}`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  const start = location.hash.slice(1);
+  open(GENS.some(g => g.id === start) ? start : "cpf");
+})();
+</script>
+</body>
+</html>
